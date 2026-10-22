@@ -126,4 +126,50 @@ describe('MergeMemo Core Engine Tests', () => {
       assert.ok(result.messageId?.startsWith('sim_'), 'Contains simulated messageId');
     });
   });
+
+  describe('5. PR Copilot Interactive Q&A Engine', () => {
+    test('answers security and risk questions accurately from reportDoc', async () => {
+      const mockDoc: any = {
+        pr: { repo: 'engine', number: 42, title: 'Concurrency fix', author: 'octocat', additions: 10, deletions: 2, changedFiles: 1, url: 'https://github.com/octo-org/engine/pull/42' },
+        report: {
+          executiveSummary: 'Fixed concurrency race condition.',
+          problemStatement: 'Race condition under high load.',
+          rootCause: 'Lack of atomic state lock.',
+          impactLimitations: { impact: 'Zero regressions.', breakingChanges: false, performanceConsiderations: 'O(1) overhead.' },
+          testingValidation: { testStrategy: 'Unit regression suite.', automatedTestsAdded: ['testConcurrentAccess'] },
+        },
+      };
+
+      const answer = await aiService.answerPRQuestion({
+        query: 'What are the security and deployment risks?',
+        reportDoc: mockDoc,
+      });
+
+      assert.ok(answer.includes('Risk & Security Assessment'), 'Contains risk header');
+      assert.ok(answer.includes('Low Deployment Risk'), 'Notes zero breaking changes');
+    });
+
+    test('drafts ready-to-send Slack updates', async () => {
+      const mockDoc: any = {
+        pr: { repo: 'engine', number: 42, title: 'Concurrency fix', author: 'octocat', additions: 10, deletions: 2, changedFiles: 1, url: 'https://github.com/octo-org/engine/pull/42' },
+        report: {
+          executiveSummary: 'Fixed concurrency race condition.',
+          problemStatement: 'Race condition under high load.',
+          rootCause: 'Lack of atomic state lock.',
+          impactLimitations: { impact: 'Zero regressions.' },
+          testingValidation: { testStrategy: 'Unit regression suite.' },
+        },
+      };
+
+      const answer = await aiService.answerPRQuestion({
+        query: 'Draft a Slack update for the team',
+        reportDoc: mockDoc,
+      });
+
+      assert.ok(answer.includes('Ready-to-Send Slack Update'), 'Contains Slack header');
+      assert.ok(answer.includes('octocat'), 'Mentions author');
+      assert.ok(answer.includes('#42'), 'Mentions PR number');
+    });
+  });
 });
+

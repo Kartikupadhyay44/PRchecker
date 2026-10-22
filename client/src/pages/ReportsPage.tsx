@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export const ReportsPage: React.FC = () => {
-  const { setActivePage, setPrefillAnalyzePR, showToast } = useApp();
+  const { setActivePage, setPrefillAnalyzePR, showToast, setActiveReport } = useApp();
   const [reports, setReports] = useState<ReportDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -74,9 +74,9 @@ export const ReportsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl mx-auto py-2">
       {/* Top Bar Filters */}
-      <div className="p-4 rounded-xl bg-card border border-border flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border shadow-subtle flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -84,17 +84,17 @@ export const ReportsPage: React.FC = () => {
             placeholder="Search reports by title, repo, or #..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs outline-none focus:border-primary transition-colors"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-border bg-background text-foreground text-xs outline-none focus:border-primary transition-colors font-mono"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <div className="flex items-center rounded-lg border border-border bg-muted/30 p-1 text-xs">
+          <div className="flex items-center rounded-xl border border-border bg-muted/30 p-1 text-xs">
             {['all', 'merged', 'open'].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1 rounded-md font-medium capitalize transition-all ${
+                className={`px-3 py-1 rounded-lg font-medium capitalize transition-all ${
                   statusFilter === st
                     ? 'bg-card text-foreground shadow-xs font-semibold'
                     : 'text-muted-foreground hover:text-foreground'
@@ -107,7 +107,7 @@ export const ReportsPage: React.FC = () => {
 
           <button
             onClick={() => setActivePage('analyze')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-semibold shadow-xs"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-semibold shadow-xs transition-colors shrink-0"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>New Report</span>
@@ -119,22 +119,22 @@ export const ReportsPage: React.FC = () => {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-56 rounded-xl bg-card border border-border" />
+            <div key={i} className="h-56 rounded-2xl bg-card border border-border" />
           ))}
         </div>
       ) : filteredReports.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredReports.map((r) => {
             const statusColors = {
-              merged: 'bg-pr-merged-subtle text-pr-merged border-pr-merged-border',
-              open: 'bg-pr-open-subtle text-pr-open border-pr-open-border',
-              closed: 'bg-pr-closed-subtle text-pr-closed border-pr-closed-border',
+              merged: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30',
+              open: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+              closed: 'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30',
             }[r.pr.state];
 
             return (
               <div
                 key={r.id}
-                className="p-5 rounded-xl bg-card border border-border hover:border-border/80 hover:shadow-subtle transition-all flex flex-col justify-between group"
+                className="p-5 rounded-2xl bg-card border border-border hover:border-primary/40 shadow-2xs hover:shadow-subtle transition-all flex flex-col justify-between group"
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
@@ -164,14 +164,27 @@ export const ReportsPage: React.FC = () => {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="pt-4 mt-3 border-t border-border flex items-center justify-between">
-                  <button
-                    onClick={() => setSelectedReport(r)}
-                    className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>View Briefing</span>
-                  </button>
+                <div className="pt-3.5 mt-3 border-t border-border flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setSelectedReport(r)}
+                      className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>View Briefing</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveReport(r);
+                        setActivePage('analyze');
+                      }}
+                      className="flex items-center gap-1 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline"
+                      title="Open full interactive studio with diffs and AI Copilot"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Studio</span>
+                    </button>
+                  </div>
 
                   <div className="flex items-center gap-1">
                     {r.pdfUrl && (
@@ -179,7 +192,7 @@ export const ReportsPage: React.FC = () => {
                         href={r.pdfUrl}
                         download
                         title="Download PDF"
-                        className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                        className="p-1.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <Download className="w-3.5 h-3.5" />
                       </a>
@@ -187,7 +200,7 @@ export const ReportsPage: React.FC = () => {
                     <button
                       onClick={() => handleRegenerate(r)}
                       title="Regenerate Report"
-                      className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      className="p-1.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                     </button>
@@ -196,7 +209,7 @@ export const ReportsPage: React.FC = () => {
                       target="_blank"
                       rel="noreferrer"
                       title="View on GitHub"
-                      className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      className="p-1.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
@@ -207,115 +220,107 @@ export const ReportsPage: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="py-16 text-center rounded-xl bg-card border border-border space-y-3">
-          <FileText className="w-10 h-10 mx-auto text-muted-foreground/40" />
-          <h3 className="text-sm font-semibold text-foreground">No reports generated yet</h3>
+        <div className="p-12 text-center rounded-2xl bg-card border border-border space-y-3">
+          <FileText className="w-8 h-8 mx-auto text-muted-foreground opacity-50" />
+          <h3 className="text-sm font-bold text-foreground">No reports generated yet</h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            Analyze any GitHub Pull Request to generate your first technical intelligence report and meeting preparation script.
+            Analyze any GitHub pull request to automatically generate, save, and export technical briefings.
           </p>
           <button
             onClick={() => setActivePage('analyze')}
-            className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-semibold shadow-xs"
+            className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:opacity-90 transition-opacity"
           >
             Analyze First PR
           </button>
         </div>
       )}
 
-      {/* Full Document Reader Modal */}
+      {/* Report Modal Viewer */}
       {selectedReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-          <div
-            onClick={() => setSelectedReport(null)}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
-          />
-          <div className="relative w-full max-w-3xl max-h-[90vh] bg-card border border-border rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-2xl max-h-[85vh] rounded-2xl bg-card border border-border flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-5 border-b border-border flex items-center justify-between">
               <div>
-                <div className="text-xs font-mono text-muted-foreground">
-                  {selectedReport.pr.org}/{selectedReport.pr.repo}#{selectedReport.pr.number}
-                </div>
-                <h2 className="text-base font-bold text-foreground truncate max-w-md">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                  Saved Technical Briefing
+                </span>
+                <h3 className="text-base font-bold text-foreground">
                   {selectedReport.pr.title}
-                </h2>
+                </h3>
               </div>
-
-              <div className="flex items-center gap-2">
-                {selectedReport.pdfUrl && (
-                  <a
-                    href={selectedReport.pdfUrl}
-                    download
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>PDF</span>
-                  </a>
-                )}
-                <button
-                  onClick={() => setSelectedReport(null)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                onClick={() => setSelectedReport(null)}
+                className="p-1.5 rounded-lg border border-border hover:bg-muted"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-6 text-xs">
-              {/* Meeting Speech Box */}
-              <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" /> 2-Minute Spoken Briefing
-                  </span>
-                  <button
-                    onClick={() => handleCopyScript(selectedReport.report.meetingPreparation.twoMinuteScript)}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded bg-card border border-border text-foreground text-[11px]"
-                  >
-                    {copiedScript ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedScript ? 'Copied' : 'Copy'}</span>
-                  </button>
-                </div>
-                <p className="italic text-foreground leading-relaxed">
-                  &ldquo;{selectedReport.report.meetingPreparation.twoMinuteScript}&rdquo;
-                </p>
-              </div>
-
-              {/* Executive Summary */}
-              <div className="space-y-1.5">
-                <h4 className="font-bold uppercase tracking-wider text-muted-foreground">
-                  Executive Summary
-                </h4>
-                <p className="text-foreground leading-relaxed">
+            <div className="p-6 overflow-y-auto space-y-4 text-xs">
+              <div className="space-y-1">
+                <h4 className="font-bold text-foreground">Executive Summary</h4>
+                <p className="text-muted-foreground leading-relaxed">
                   {selectedReport.report.executiveSummary}
                 </p>
               </div>
 
-              {/* Problem & Root Cause */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-3.5 rounded-xl bg-muted/40 border border-border space-y-1">
-                  <div className="font-bold text-rose-500">Problem</div>
-                  <p className="text-muted-foreground">{selectedReport.report.problemStatement}</p>
-                </div>
-                <div className="p-3.5 rounded-xl bg-muted/40 border border-border space-y-1">
-                  <div className="font-bold text-amber-500">Root Cause</div>
-                  <p className="text-muted-foreground">{selectedReport.report.rootCause}</p>
-                </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-foreground">Problem & Root Cause</h4>
+                <p className="text-muted-foreground leading-relaxed">
+                  {selectedReport.report.problemStatement}
+                </p>
+                <p className="text-muted-foreground pt-1">
+                  <strong>Root Cause:</strong> {selectedReport.report.rootCause}
+                </p>
               </div>
 
-              {/* Questions & Answers */}
-              <div className="space-y-2">
-                <h4 className="font-bold uppercase tracking-wider text-muted-foreground">
-                  Likely Technical Questions
-                </h4>
-                {selectedReport.report.meetingPreparation.likelyQuestions.map((qa, i) => (
-                  <div key={i} className="p-3 rounded-lg border border-border space-y-1">
-                    <div className="font-bold text-foreground">Q: {qa.question}</div>
-                    <div className="text-emerald-600 dark:text-emerald-400 font-medium">A: {qa.suggestedAnswer}</div>
-                  </div>
-                ))}
+              <div className="space-y-1">
+                <h4 className="font-bold text-foreground">Standup Presentation Script</h4>
+                <div className="p-3.5 rounded-xl bg-muted/40 border border-border/80 text-foreground leading-relaxed">
+                  "{selectedReport.report.meetingPreparation.twoMinuteScript}"
+                </div>
+                <div className="flex justify-end pt-1">
+                  <button
+                    onClick={() =>
+                      handleCopyScript(selectedReport.report.meetingPreparation.twoMinuteScript)
+                    }
+                    className="flex items-center gap-1 text-primary hover:underline font-semibold"
+                  >
+                    {copiedScript ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedScript ? 'Copied' : 'Copy Script'}</span>
+                  </button>
+                </div>
               </div>
+            </div>
+
+            <div className="p-4 border-t border-border flex items-center justify-end gap-2 bg-muted/20">
+              <button
+                onClick={() => {
+                  setActiveReport(selectedReport);
+                  setSelectedReport(null);
+                  setActivePage('analyze');
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold text-xs shadow-xs transition-all border border-white/20"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Open in Studio</span>
+              </button>
+              {selectedReport.pdfUrl && (
+                <a
+                  href={selectedReport.pdfUrl}
+                  download
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white font-semibold text-xs shadow-xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF</span>
+                </a>
+              )}
+              <button
+                onClick={() => setSelectedReport(null)}
+                className="px-3 py-1.5 rounded-xl border border-border hover:bg-muted font-semibold text-xs"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

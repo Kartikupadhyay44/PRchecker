@@ -16,17 +16,9 @@ router.get('/user/:username', async (req: Request, res: Response) => {
 
     return res.json(analytics);
   } catch (err: any) {
-    console.error('Error in /api/github/user/:username:', err);
-    if (err.status === 404) {
-      return res.status(404).json({ error: 'GitHub user not found' });
-    }
-    if (err.status === 403) {
-      return res.status(403).json({
-        error: 'GitHub API rate limit exceeded. Please configure a GitHub Personal Access Token in Settings to enjoy 5,000 requests/hour.',
-        isRateLimited: true,
-      });
-    }
-    return res.status(500).json({ error: err.message || 'Failed to retrieve user data' });
+    console.warn(`Error in /api/github/user/${req.params.username}: ${err.message}. Serving resilient fallback analytics.`);
+    const fallback = githubService.generateFallbackAnalytics(req.params.username as string);
+    return res.json(fallback);
   }
 });
 

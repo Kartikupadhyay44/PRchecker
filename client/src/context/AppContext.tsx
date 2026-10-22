@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { NavigationPage, UserAnalytics, AppSettings } from '../types';
+import { NavigationPage, UserAnalytics, AppSettings, ReportDocument } from '../types';
 import { api } from '../services/api';
 
 interface Toast {
@@ -25,6 +25,8 @@ interface AppContextType {
   setSelectedOrgForFilter: (org: string | null) => void;
   prefillAnalyzePR: { prUrl: string; issueUrl?: string } | null;
   setPrefillAnalyzePR: (val: { prUrl: string; issueUrl?: string } | null) => void;
+  activeReport: ReportDocument | null;
+  setActiveReport: (report: ReportDocument | null) => void;
   toasts: Toast[];
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   dismissToast: (id: string) => void;
@@ -44,7 +46,7 @@ const defaultSettings: AppSettings = {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activePage, setActivePage] = useState<NavigationPage>('overview');
+  const [activePage, setActivePage] = useState<NavigationPage>('analyze');
   const [username, setUsername] = useState<string>('shadcn');
   const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState<boolean>(false);
@@ -53,6 +55,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [selectedOrgForFilter, setSelectedOrgForFilter] = useState<string | null>(null);
   const [prefillAnalyzePR, setPrefillAnalyzePR] = useState<{ prUrl: string; issueUrl?: string } | null>(null);
+  const [activeReport, setActiveReport] = useState<ReportDocument | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -125,10 +128,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Trigger initial analytics fetch once username is available
   useEffect(() => {
-    if (username && !analytics && !loadingAnalytics) {
+    if (username && !analytics && !loadingAnalytics && !analyticsError) {
       refreshAnalytics(username);
     }
-  }, [username, analytics, loadingAnalytics, refreshAnalytics]);
+  }, [username, analytics, loadingAnalytics, analyticsError, refreshAnalytics]);
 
   const updateSettings = useCallback(
     async (newSettings: Partial<AppSettings>) => {
@@ -163,6 +166,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSelectedOrgForFilter,
         prefillAnalyzePR,
         setPrefillAnalyzePR,
+        activeReport,
+        setActiveReport,
         toasts,
         showToast,
         dismissToast,

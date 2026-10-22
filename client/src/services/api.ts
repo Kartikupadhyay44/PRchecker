@@ -101,6 +101,24 @@ export const api = {
     return res.json();
   },
 
+  // Ask interactive PR Copilot
+  async askPRCopilot(payload: {
+    query: string;
+    reportDoc: ReportDocument;
+    customApiKey?: string;
+  }): Promise<{ answer: string }> {
+    const res = await fetch(`${API_BASE}/analyze/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Failed to query PR Copilot' }));
+      throw new Error(err.error || 'Failed to query PR Copilot');
+    }
+    return res.json();
+  },
+
   // Get settings
   async getSettings(): Promise<AppSettings> {
     const res = await fetch(`${API_BASE}/settings`);

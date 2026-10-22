@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { randomUUID } from 'crypto';
 import { reportService } from '../services/report.service.js';
+import { aiService } from '../services/ai.service.js';
 
 const router = Router();
 
@@ -78,6 +79,27 @@ router.get('/status/:jobId', (req: Request, res: Response) => {
   }
 
   return res.json(job);
+});
+
+// Interactive PR Copilot chat endpoint
+router.post('/chat', async (req: Request, res: Response) => {
+  try {
+    const { query, reportDoc, customApiKey } = req.body;
+    if (!query || !reportDoc) {
+      return res.status(400).json({ error: 'Query and reportDoc are required' });
+    }
+
+    const answer = await aiService.answerPRQuestion({
+      query,
+      reportDoc,
+      customApiKey,
+    });
+
+    return res.json({ answer });
+  } catch (err: any) {
+    console.error('PR Copilot chat route error:', err);
+    return res.status(500).json({ error: err.message || 'Failed to generate answer' });
+  }
 });
 
 export default router;

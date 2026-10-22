@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { UserSettingsModel } from '../models/UserSettings.js';
 
 const router = Router();
@@ -19,9 +20,11 @@ let memorySettings = {
 // Get settings
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const doc = await UserSettingsModel.findOne({ userId: 'default' });
-    if (doc) {
-      return res.json(doc);
+    if (mongoose.connection.readyState === 1) {
+      const doc = await UserSettingsModel.findOne({ userId: 'default' });
+      if (doc) {
+        return res.json(doc);
+      }
     }
   } catch {
     // Ignore db error

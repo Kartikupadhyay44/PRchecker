@@ -320,6 +320,77 @@ Return a valid JSON object matching this schema exactly (do NOT include Markdown
       references,
     };
   }
+
+  public async answerPRQuestion(params: {
+    query: string;
+    reportDoc: any;
+    customApiKey?: string;
+  }): Promise<string> {
+    const { query, reportDoc, customApiKey } = params;
+    const client = this.getClient(customApiKey);
+
+    if (client) {
+      try {
+        const response = await client.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `You are MergeMemo PR Copilot, a principal staff engineer assisting an engineering team. 
+You are grounded in the following PR report:
+PR: ${reportDoc.pr.org}/${reportDoc.pr.repo}#${reportDoc.pr.number} - "${reportDoc.pr.title}"
+Author: @${reportDoc.pr.author}
+Summary: ${reportDoc.report.executiveSummary}
+Problem: ${reportDoc.report.problemStatement}
+Root Cause: ${reportDoc.report.rootCause}
+Impact: ${reportDoc.report.impactLimitations.impact}
+Testing: ${reportDoc.report.testingValidation.testStrategy}
+
+Answer the engineer's question concisely, authoritatively, and with rich markdown formatting.`,
+            },
+            {
+              role: 'user',
+              content: query,
+            },
+          ],
+          max_tokens: 600,
+          temperature: 0.3,
+        });
+
+        return response.choices[0]?.message?.content || 'No response generated.';
+      } catch (err: any) {
+        console.warn('OpenAI PR Copilot error:', err.message);
+      }
+    }
+
+    // Grounded Fallback Answer Engine
+    const q = query.toLowerCase();
+    if (q.includes('risk') || q.includes('security') || q.includes('danger')) {
+      const breaking = reportDoc.report.impactLimitations?.breakingChanges
+        ? '⚠️ Warning: Breaking changes detected.'
+        : '✅ Low Deployment Risk: Zero breaking changes detected.';
+      return `### 🛡️ Risk & Security Assessment\n\n${breaking}\n\n- **Production Impact:** ${reportDoc.report.impactLimitations.impact}\n- **Performance:** ${reportDoc.report.impactLimitations.performanceConsiderations}\n- **Blast Radius:** Constrained to ${reportDoc.pr.changedFiles} modified files (+${reportDoc.pr.additions}/-${reportDoc.pr.deletions} lines).\n- **Deployment Recommendation:** Safe for standard rolling deployment once regression tests pass.`;
+    }
+
+    if (q.includes('slack') || q.includes('announcement') || q.includes('share')) {
+      return `### 💬 Ready-to-Send Slack Update\n\n\`\`\`text\n🚀 *PR Deployed:* ${reportDoc.pr.repo} #${reportDoc.pr.number} — ${reportDoc.pr.title}\n👤 *Author:* @${reportDoc.pr.author}\n📊 *Changes:* +${reportDoc.pr.additions}/-${reportDoc.pr.deletions} lines across ${reportDoc.pr.changedFiles} files\n🎯 *TL;DR:* ${reportDoc.report.executiveSummary}\n🔗 *PR Link:* ${reportDoc.pr.url}\n\`\`\``;
+    }
+
+    if (q.includes('test') || q.includes('verify') || q.includes('qa')) {
+      const tests =
+        reportDoc.report.testingValidation.automatedTestsAdded
+          ?.map((t: string) => `- ${t}`)
+          .join('\n') || '- Automated unit regression tests';
+      return `### 🧪 Test & Validation Plan\n\n**Strategy:**\n${reportDoc.report.testingValidation.testStrategy}\n\n**Automated Tests:**\n${tests}\n\n**Manual QA Steps:**\n1. Checkout branch and run local test suite.\n2. Verify the happy path and edge conditions outlined in the before/after behavior matrix.\n3. Validate zero regression in dependent upstream components.`;
+    }
+
+    if (q.includes('jira') || q.includes('ticket') || q.includes('release note')) {
+      return `### 📋 Jira / Release Notes Draft\n\n**Issue Title:** [PR #${reportDoc.pr.number}] ${reportDoc.pr.title}\n**Component:** ${reportDoc.pr.repo}\n**Type:** Improvement / Bug Fix\n\n**Description:**\n${reportDoc.report.problemStatement}\n\n**Resolution:**\n${reportDoc.report.executiveSummary}\n\n**Testing Performed:**\n${reportDoc.report.testingValidation.testStrategy}`;
+    }
+
+    // Default intelligent briefing response
+    return `### 💡 PR Copilot Insight\n\nRegarding **${reportDoc.pr.title}** (#${reportDoc.pr.number}):\n\n${reportDoc.report.executiveSummary}\n\n**Key Takeaway:**\nThis PR focuses on stabilizing core behavior by modifying **${reportDoc.pr.changedFiles} files** (+${reportDoc.pr.additions}/-${reportDoc.pr.deletions}). The main root cause addressed was: *${reportDoc.report.rootCause}*.`;
+  }
 }
 
 export const aiService = new AIService();

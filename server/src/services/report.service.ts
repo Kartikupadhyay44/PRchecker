@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import mongoose from 'mongoose';
 import { githubService } from './github.service.js';
 import { aiService } from './ai.service.js';
 import { pdfService } from './pdf.service.js';
@@ -199,10 +200,14 @@ export class ReportService {
 
     // Save to Database
     try {
-      await ReportModel.create({
-        reportId: reportDoc.id,
-        ...reportDoc,
-      });
+      if (mongoose.connection.readyState === 1) {
+        await ReportModel.create({
+          reportId: reportDoc.id,
+          ...reportDoc,
+        });
+      } else {
+        memoryReports.set(reportDoc.id, reportDoc);
+      }
     } catch (dbErr: any) {
       console.warn('MongoDB save fallback to memory:', dbErr.message);
       memoryReports.set(reportDoc.id, reportDoc);
@@ -216,19 +221,21 @@ export class ReportService {
 
   public async getReportById(id: string): Promise<ReportDocument | null> {
     try {
-      const dbDoc = await ReportModel.findOne({ reportId: id });
-      if (dbDoc) {
-        return {
-          id: dbDoc.reportId,
-          createdAt: dbDoc.createdAt ? String(dbDoc.createdAt) : new Date().toISOString(),
-          updatedAt: dbDoc.updatedAt ? String(dbDoc.updatedAt) : new Date().toISOString(),
-          pr: dbDoc.pr as any,
-          issue: dbDoc.issue as any,
-          report: dbDoc.report as any,
-          pdfUrl: dbDoc.pdfUrl,
-          pdfPath: dbDoc.pdfPath,
-          emailDelivery: dbDoc.emailDelivery as any,
-        };
+      if (mongoose.connection.readyState === 1) {
+        const dbDoc = await ReportModel.findOne({ reportId: id });
+        if (dbDoc) {
+          return {
+            id: dbDoc.reportId,
+            createdAt: dbDoc.createdAt ? String(dbDoc.createdAt) : new Date().toISOString(),
+            updatedAt: dbDoc.updatedAt ? String(dbDoc.updatedAt) : new Date().toISOString(),
+            pr: dbDoc.pr as any,
+            issue: dbDoc.issue as any,
+            report: dbDoc.report as any,
+            pdfUrl: dbDoc.pdfUrl,
+            pdfPath: dbDoc.pdfPath,
+            emailDelivery: dbDoc.emailDelivery as any,
+          };
+        }
       }
     } catch {
       // Ignore
@@ -241,19 +248,21 @@ export class ReportService {
     let reports: ReportDocument[] = [];
 
     try {
-      const dbDocs = await ReportModel.find().sort({ createdAt: -1 }).limit(50);
-      if (dbDocs && dbDocs.length > 0) {
-        reports = dbDocs.map((doc: any) => ({
-          id: doc.reportId,
-          createdAt: doc.createdAt ? String(doc.createdAt) : new Date().toISOString(),
-          updatedAt: doc.updatedAt ? String(doc.updatedAt) : new Date().toISOString(),
-          pr: doc.pr as any,
-          issue: doc.issue as any,
-          report: doc.report as any,
-          pdfUrl: doc.pdfUrl,
-          pdfPath: doc.pdfPath,
-          emailDelivery: doc.emailDelivery as any,
-        }));
+      if (mongoose.connection.readyState === 1) {
+        const dbDocs = await ReportModel.find().sort({ createdAt: -1 }).limit(50);
+        if (dbDocs && dbDocs.length > 0) {
+          reports = dbDocs.map((doc: any) => ({
+            id: doc.reportId,
+            createdAt: doc.createdAt ? String(doc.createdAt) : new Date().toISOString(),
+            updatedAt: doc.updatedAt ? String(doc.updatedAt) : new Date().toISOString(),
+            pr: doc.pr as any,
+            issue: doc.issue as any,
+            report: doc.report as any,
+            pdfUrl: doc.pdfUrl,
+            pdfPath: doc.pdfPath,
+            emailDelivery: doc.emailDelivery as any,
+          }));
+        }
       }
     } catch {
       // Memory fallback
